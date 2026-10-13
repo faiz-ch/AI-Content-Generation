@@ -1,0 +1,11 @@
+services:
+  flow-story-studio:
+    build: .
+    image: flow-story-studio:latest
+    container_name: flow-story-studio
+    ports:
+      - "8080:8080"
+    environment:
+      # DNS servers the built-in relay uses to reach the AI/search APIs.
+      NGINX_RESOLVER: "1.1.1.1 8.8.8.8"
+    restart: unless-stopped
