@@ -181,8 +181,25 @@ export const spokenLang = P => { const s = P.story.settings; return s.language =
 export function speechDesc(P) {
   const s = P.story.settings, lang = spokenLang(P);
   if (s.dialogue === 'none') return 'no speech — music and sound effects only';
-  if (s.dialogue === 'narration') return `narrator voice-over only, in ${lang}`;
-  return `characters speak short dialogue lines, in ${lang}`;
+  const voices = s.voices === 'comedy'
+    ? ' Voice style: COMEDY — characters may deliberately use voices that do not match their age (e.g. a baby with a deep adult voice).'
+    : ' Voice style: NATURAL — every character must sound their real age, gender and species (a baby sounds like a baby, a child like a child).';
+  if (s.dialogue === 'narration') return `narrator voice-over only, in ${lang}.${voices}`;
+  return `characters speak short dialogue lines, in ${lang}.${voices}`;
+}
+
+/* ---------- voices ---------- */
+const CHILD_RE = /\b(baby|babies|infant|newborn|toddler|child|kid|little (?:boy|girl)|(?:[1-9]|1[0-2])[- ]?(?:year|yr)s?[- ]old|\d{1,2}[- ]?months?[- ]old)\b/i;
+const CHILD_VOICE_RE = /\b(baby|babyish|infant|toddler|child|childlike|child's|kid|young (?:boy|girl)|little (?:boy|girl)|high[- ]pitched|(?:[1-9]|1[0-2])[- ]?(?:year|yr)s?[- ]old)\b/i;
+/** Uses the age field when present, otherwise the appearance text. */
+export const isChildLike = c => CHILD_RE.test(str(c.age) || str(c.appearance));
+export const voiceNeedsAgeFix = (P, c) => P.story.settings.voices !== 'comedy' && isChildLike(c) && !CHILD_VOICE_RE.test(str(c.voice));
+/** The voice text used in prompts; guarantees a child-like voice for babies and children in natural mode. */
+export function voiceFor(P, c) {
+  const v = str(c.voice);
+  // The written voice contradicts the age, so it is replaced rather than combined (a mixed description confuses the video model).
+  if (voiceNeedsAgeFix(P, c)) return `the natural voice of ${str(c.age) || 'a young child'} — high-pitched, soft and childlike`;
+  return v || (str(c.age) ? `natural voice of ${str(c.age)}` : '');
 }
 function formatLine(P, S) {
   const { min, max } = clipRange(P, S), s = P.story.settings, sec = S.clipSeconds;
@@ -196,13 +213,15 @@ function lengthRules(P, S) {
   }
   return `SHORT format (Reels/TikTok/Shorts): between ${min} and ${max} clips. Hook in the first 2 seconds, fast escalation, one strong twist or reveal, and a punchy payoff in the last clip (looping back to the opening image is a plus). At most ${L.chars} characters and ${L.locs} locations — fewer is better.`;
 }
-const CHAR_RULES = `Character and location rules:
-- Character "appearance" (25–45 words): species if not human, age, skin tone, face shape, eye colour, hair style and colour, height/build, one distinctive feature.
+const charRules = P => `Character and location rules:
+- Character "age": exact age or age group as a short label, e.g. "2-year-old toddler", "about 8 years old", "woman in her 30s", "elderly man, about 70", "adult cat".
+- "appearance" (25–45 words): species if not human, age, skin tone, face shape, eye colour, hair style and colour, height/build, one distinctive feature.
 - "wardrobe" (15–30 words): exact garments with colours and materials — ONE outfit for the whole story unless a change is essential.
-- "voice": short voice description, e.g. "warm elderly male voice".
+- "voice" (12–25 words): age group, gender, pitch, tone, pace and accent, and it MUST fit the character's age and species: babies and toddlers have high-pitched, soft voices with babbling or very simple words; young children sound like young children; teenagers sound youthful; adults and elderly people sound their age; animals get a voice that fits their size and age. ${P.story.settings.voices === 'comedy' ? 'COMEDY voice style is chosen: a deliberately mismatched voice is allowed — if you use one, state it explicitly (e.g. "deep, serious adult male voice, comically mismatched for a baby").' : 'NEVER give a baby or child an adult voice.'}
+- "narrator_voice" (only matters when there is narration): age group, gender, tone, pace and accent of the narrator, suited to the audience and the story's tone.
 - Location "description" (30–50 words): precise and visual, with fixed landmarks and props.
 - Never use real celebrities, brands or copyrighted characters.`;
-const OUTLINE_FIELDS = `"title":"","logline":"","theme":"","tone":"","characters":[{"id":"c1","name":"","role":"","appearance":"","wardrobe":"","voice":""}],"locations":[{"id":"l1","name":"","description":""}],"style_lock":{"art_style":"","color_palette":"","lighting":"","camera_language":"","film_look":""}`;
+const OUTLINE_FIELDS = `"title":"","logline":"","theme":"","tone":"","narrator_voice":"","characters":[{"id":"c1","name":"","role":"","age":"","appearance":"","wardrobe":"","voice":""}],"locations":[{"id":"l1","name":"","description":""}],"style_lock":{"art_style":"","color_palette":"","lighting":"","camera_language":"","film_look":""}`;
 const PART_SCHEMA = `{"title":"","summary":"","purpose":"hook | setup | rising | reveal | twist | cliffhanger | climax | payoff | ending","transition":"cut | continuous","characters":["c1"],"location":"l1","time_of_day":"","weather":""}`;
 const PART_RULES = sec => `Rules for every part:
 - ONE continuous moment that can be filmed as a single ${sec}-second shot with one main action (no montage, no time jump inside a part).
@@ -248,12 +267,12 @@ You are the head writer of a channel whose videos people watch to the very end.
 3. Decide how many ${sec}-second clips the chosen story really needs to be told completely — no padding, no rushing, within the format range.
 4. Write the outline of the chosen storyline: acts with beats, characters, locations and a style lock.
 ${lengthRules(P, S)}
-${CHAR_RULES}
+${charRules(P)}
 JSON: {"storylines":[{"title":"","logline":"","hook":"","twist":"","ending":"","why_it_holds_attention":"","scores":{"hook":0,"suspense":0,"payoff":0,"feasibility":0}}],"chosen":0,"choice_reason":"","clip_count":${min},"pacing_note":"why this many clips",${OUTLINE_FIELDS},"acts":[{"name":"","purpose":"","beats":[""],"clips":"1-4"}]}`;
 }
 
 function normChars(v, max) {
-  return arr(v).slice(0, max).map((c, i) => ({ id: str(c.id) || 'c' + (i + 1), name: str(c.name) || 'Character ' + (i + 1), role: str(c.role), appearance: str(c.appearance), wardrobe: str(c.wardrobe), voice: str(c.voice) }));
+  return arr(v).slice(0, max).map((c, i) => ({ id: str(c.id) || 'c' + (i + 1), name: str(c.name) || 'Character ' + (i + 1), role: str(c.role), age: str(c.age), appearance: str(c.appearance), wardrobe: str(c.wardrobe), voice: str(c.voice) }));
 }
 function normLocs(v, max) {
   return arr(v).slice(0, max).map((l, i) => ({ id: str(l.id) || 'l' + (i + 1), name: str(l.name) || 'Location ' + (i + 1), description: str(l.description) }));
@@ -269,7 +288,7 @@ export function normOutline(j, P, S) {
   const n = Math.max(min, Math.min(max, Math.round(Number(j.clip_count)) || min));
   return {
     storylines, chosen: Math.max(0, Math.min(storylines.length - 1, Number(j.chosen) || 0)), choice_reason: str(j.choice_reason),
-    title: str(j.title) || 'Untitled story', logline: str(j.logline), theme: str(j.theme), tone: str(j.tone),
+    title: str(j.title) || 'Untitled story', logline: str(j.logline), theme: str(j.theme), tone: str(j.tone), narrator_voice: str(j.narrator_voice),
     clip_count: n, pacing_note: str(j.pacing_note),
     characters: normChars(j.characters, L.chars + 1), locations: normLocs(j.locations, L.locs + 1), style_lock: normStyle(j.style_lock, P),
     acts: arr(j.acts).map(a => ({ name: str(a.name), purpose: str(a.purpose), beats: arr(a.beats).map(str).filter(Boolean), clips: str(a.clips) }))
@@ -306,7 +325,7 @@ export function normParts(j, st) {
 
 /** Story data without bulky fields, for prompts. */
 function storyBrief(st) {
-  return { title: st.title, logline: st.logline, theme: st.theme, tone: st.tone, characters: st.characters, locations: st.locations,
+  return { title: st.title, logline: st.logline, theme: st.theme, tone: st.tone, narrator_voice: st.narrator_voice, characters: st.characters, locations: st.locations,
     style_lock: st.style_lock, parts: st.parts.map(({ id, ...p }) => p) };
 }
 export function rewriteStoryPrompt(P, S, ins) {
@@ -318,13 +337,13 @@ ${JSON.stringify(storyBrief(P.story.data))}
 Change request from the user: "${ins}"
 Rewrite the story applying the change request. Keep ids of unchanged characters and locations. Keep roughly the same number of parts unless the change needs more or fewer (stay within ${min}–${max}). The story must still have a hook, rising suspense and a complete ending.
 ${lengthRules(P, S)}
-${CHAR_RULES}
+${charRules(P)}
 ${PART_RULES(S.clipSeconds)}
 JSON: {${OUTLINE_FIELDS},"parts":[${PART_SCHEMA}]}`;
 }
 export function normRewrite(j, P, S) {
   const { L } = clipRange(P, S), old = P.story.data;
-  const st = { ...old, title: str(j.title) || old.title, logline: str(j.logline) || old.logline, theme: str(j.theme) || old.theme, tone: str(j.tone) || old.tone,
+  const st = { ...old, title: str(j.title) || old.title, logline: str(j.logline) || old.logline, theme: str(j.theme) || old.theme, tone: str(j.tone) || old.tone, narrator_voice: str(j.narrator_voice) || old.narrator_voice || '',
     characters: normChars(j.characters, L.chars + 1), locations: normLocs(j.locations, L.locs + 1), style_lock: normStyle(j.style_lock, P) };
   if (!st.characters.length) st.characters = old.characters;
   if (!st.locations.length) st.locations = old.locations;
@@ -367,11 +386,13 @@ FINAL story (written and edited by the user — this is the source of truth):
 ${JSON.stringify(storyBrief(st))}
 You are the production designer. Rebuild the visual bible for THIS story so that every separately generated ${S.clipSeconds}-second clip looks like the same film.
 1. "master": a story-specific style guide. Adapt the genre style guide to this story's tone, setting and events; where they conflict, the story wins.
-2. "characters": for EVERY character id: keep every detail already written (never contradict or remove it) and add only missing precise visual details. appearance 30–50 words; wardrobe 15–35 words (one outfit for the whole film unless the story requires a change); voice.
+2. "characters": for EVERY character id: keep every detail already written (never contradict or remove it) and add only missing precise details. age (short label); appearance 30–50 words; wardrobe 15–35 words (one outfit for the whole film unless the story requires a change); voice 12–25 words that fits the character's age, gender and species (see the voice rules below).
 3. "locations": for EVERY location id: 35–60 words — layout, architecture or landscape, fixed landmarks and props with colours and positions, materials, background elements. It must fit every part set there (time of day and weather vary per part, so do not fix them here).
 4. "style_lock": art_style, color_palette, lighting, camera_language, film_look — one consistent look for the whole film.
+5. "narrator_voice": the narrator's voice (only matters when there is narration).
+${charRules(P)}
 Do not add or remove characters or locations; keep their ids and names.
-JSON: {"master":${MASTER_SCHEMA(S.clipSeconds)},"characters":[{"id":"c1","name":"","role":"","appearance":"","wardrobe":"","voice":""}],"locations":[{"id":"l1","name":"","description":""}],"style_lock":{"art_style":"","color_palette":"","lighting":"","camera_language":"","film_look":""}}`;
+JSON: {"master":${MASTER_SCHEMA(S.clipSeconds)},"narrator_voice":"","characters":[{"id":"c1","name":"","role":"","age":"","appearance":"","wardrobe":"","voice":""}],"locations":[{"id":"l1","name":"","description":""}],"style_lock":{"art_style":"","color_palette":"","lighting":"","camera_language":"","film_look":""}}`;
 }
 /** Mutates P (a working copy). */
 export function applyDesign(P, j) {
@@ -380,12 +401,13 @@ export function applyDesign(P, j) {
   const jc = arr(j.characters), jl = arr(j.locations);
   st.characters = st.characters.map(c => {
     const n = jc.find(x => str(x.id) === c.id) || jc.find(x => str(x.name).toLowerCase() === c.name.toLowerCase());
-    return n ? { ...c, appearance: str(n.appearance) || c.appearance, wardrobe: str(n.wardrobe) || c.wardrobe, voice: str(n.voice) || c.voice, role: c.role || str(n.role) } : c;
+    return n ? { ...c, age: str(n.age) || c.age || '', appearance: str(n.appearance) || c.appearance, wardrobe: str(n.wardrobe) || c.wardrobe, voice: str(n.voice) || c.voice, role: c.role || str(n.role) } : c;
   });
   st.locations = st.locations.map(l => {
     const n = jl.find(x => str(x.id) === l.id) || jl.find(x => str(x.name).toLowerCase() === l.name.toLowerCase());
     return n ? { ...l, description: str(n.description) || l.description } : l;
   });
+  st.narrator_voice = str(j.narrator_voice) || st.narrator_voice || '';
   const sl = j.style_lock || {};
   st.style_lock = Object.fromEntries(Object.keys({ art_style: 1, color_palette: 1, lighting: 1, camera_language: 1, film_look: 1 })
     .map(k => [k, str(sl[k]) || str(st.style_lock?.[k])]));
@@ -517,7 +539,7 @@ function clipRules(P, S) {
 5. beats: three timed beats covering 0–${sec}s that move physically and plausibly from start_state to end_state. Every change of position, pose, held object or prop must happen on screen in the beats — nothing appears, disappears or teleports.
 6. characters_present: everyone visible at any moment. No one else may appear. Refer to characters only by id; never describe their looks.
 7. camera: at most one simple move (static, slow push-in, slow pan, tracking, slow orbit), consistent with the start and end shot sizes.
-8. dialogue: ${none ? 'none — always return an empty array.' : `at most ${wordLimit(S)} words in total per clip, in ${spokenLang(P)}. speaker = the id of a character who is present, or "narrator".`}
+8. dialogue: ${none ? 'none — always return an empty array.' : `at most ${wordLimit(S)} words in total per clip, in ${spokenLang(P)}. speaker = the id of a character who is present, or "narrator".${P.story.settings.voices === 'comedy' ? '' : ' Lines must suit the speaker\'s age: a baby or toddler only babbles or says one or two simple words; a young child speaks in short, simple sentences.'}`}
 9. sound: ambience and music mood, consistent with neighbouring clips.`;
 }
 export function clipBatchPrompt(P, S, a, b, prev) {
@@ -636,7 +658,11 @@ export function buildPrompt(P, S, clip, i) {
   if (look) L.push(look);
   if (chars.length) {
     L.push('Characters — only these appear, and they look exactly the same in every clip:');
-    chars.forEach(c => L.push(`- ${c.name}: ${endDot(c.appearance)} Wearing: ${endDot(c.wardrobe)}`));
+    const speech = set.dialogue !== 'none';
+    chars.forEach(c => {
+      const voice = speech ? voiceFor(P, c) : '';
+      L.push(`- ${c.name}${str(c.age) ? ` (${str(c.age)})` : ''}: ${endDot(c.appearance)} Wearing: ${endDot(c.wardrobe)}${voice ? ` Voice: ${endDot(voice)}` : ''}`);
+    });
   } else L.push('No people or characters appear in this clip.');
   L.push(`START FRAME (the first second must look exactly like this): ${renderState(st, clip.start_state)}`);
   L.push('ACTION:');
@@ -646,9 +672,16 @@ export function buildPrompt(P, S, clip, i) {
   if (clip.dialogue.length && set.dialogue !== 'none') {
     L.push(`Audio — spoken in ${spokenLang(P)}:`);
     clip.dialogue.forEach(d => {
-      if (d.speaker === 'narrator') L.push(`- Narrator (voice-over${d.delivery ? ', ' + d.delivery : ''}): "${d.line}"`);
-      else { const c = charById(st, d.speaker); L.push(`- ${c ? c.name : d.speaker} (${[c?.voice, d.delivery].filter(Boolean).join(', ') || 'speaking'}) says: "${d.line}"`); }
+      if (d.speaker === 'narrator') L.push(`- Narrator (voice-over${st.narrator_voice ? '; ' + str(st.narrator_voice) : ''}${d.delivery ? '; ' + d.delivery : ''}): "${d.line}"`);
+      else {
+        const c = charById(st, d.speaker);
+        const v = c ? voiceFor(P, c) : '';
+        L.push(`- ${c ? c.name : d.speaker} says, in ${c ? c.name + '’s' : 'their'} own voice${v ? ` (${v}${d.delivery ? '; ' + d.delivery : ''})` : d.delivery ? ` (${d.delivery})` : ''}: "${d.line}"`);
+      }
     });
+    L.push(set.voices === 'comedy'
+      ? 'Voices: each character speaks only in the voice described for them — mismatched voices are intentional for comedy.'
+      : 'Voices: each character speaks only in their own voice as described, matching their age — babies and children must sound like babies and children, never like adults.');
   } else L.push('No speech.');
   if (clip.sound) L.push(`Sound: ${endDot(clip.sound)}`);
   if (m.look) L.push(`Look: ${endDot(m.look)}`);
@@ -682,7 +715,8 @@ export function upgradeProject(p) {
     st.parts = arr(st.parts).map((pt, i) => ({ id: pt.id || uid(), title: str(pt.title), summary: str(pt.summary), purpose: str(pt.purpose),
       transition: i === 0 ? 'cut' : (pt.transition || 'continuous'), characters: arr(pt.characters), location: str(pt.location),
       time_of_day: str(pt.time_of_day), weather: str(pt.weather) }));
-    st.characters = arr(st.characters); st.locations = arr(st.locations);
+    st.characters = arr(st.characters).map(c => ({ age: '', voice: '', ...c })); st.locations = arr(st.locations);
+    st.narrator_voice = str(st.narrator_voice);
     st.style_lock = { art_style: '', color_palette: '', lighting: '', camera_language: '', film_look: '', ...(st.style_lock || {}) };
     st.storylines = arr(st.storylines); st.acts = arr(st.acts);
     st.clip_count = st.clip_count || st.parts.length;

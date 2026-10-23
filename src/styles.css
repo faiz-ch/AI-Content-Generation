@@ -415,3 +415,5 @@ details.disclose > :last-child { margin-bottom: 14px; }
 .scene-grid p { margin-top: 4px; }
 @media (max-width: 820px) { .scene-grid { grid-template-columns: 1fr; } }
 .panel.plan { background: var(--grad-hero); }
+.busy-detail { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; font-size: 0.86rem; color: var(--muted); min-height: 40px; }
+.busy-detail i { color: var(--ink); font-style: normal; }

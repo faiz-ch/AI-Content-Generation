@@ -29,8 +29,8 @@ export const BUILTIN = [
     m: { style: 'Cinematic realism, soft warm grade', look: 'Intimate homes, meaningful glances', camera: 'Close-ups and medium two-shots, slow push-ins', lighting: 'Soft window light', pacing: 'One emotional beat per clip', audio: 'Gentle piano, natural dialogue', character_rules: 'Family members with clearly different ages and fixed outfits', hook: 'Tension or tears in first frame', avoid: 'melodramatic distortion, text' } },
   { name: 'Mythology & folklore', emoji: '🗿', audience: 'Teens', desc: 'Legends and folk tales retold visually.',
     m: { style: 'Dark cinematic painterly realism', look: 'Ancient landscapes, mythical beings', camera: 'Epic wides and slow reveals', lighting: 'Firelight, stormy skies', pacing: 'One legend beat per clip', audio: 'Storyteller narration, drums', character_rules: 'Iconic silhouettes, fixed costume colours', hook: 'Mysterious figure emerges', avoid: 'gore, text, real religious figures' } },
-  { name: 'Talking babies / podcast style', emoji: '👶', audience: 'All', desc: 'Toddlers chatting like adults in a podcast studio.',
-    m: { style: 'Photorealistic, studio podcast set', look: 'Babies with microphones and headphones, serious adult tone', camera: 'Static medium shots per speaker, two-shot', lighting: 'Warm podcast studio lighting', pacing: 'One exchange per clip', audio: 'Clear adult-sounding dialogue, room tone', character_rules: 'Each baby with distinct hair and onesie colour', hook: 'Baby starts a dramatic statement mid-sentence', avoid: 'uncanny morphing, text, logos' } },
+  { name: 'Talking babies / podcast style', emoji: '👶', audience: 'All', voiceChoice: true, desc: 'Toddlers chatting like adults in a podcast studio.',
+    m: { style: 'Photorealistic, studio podcast set', look: 'Babies with microphones and headphones discussing grown-up topics like a serious podcast', camera: 'Static medium shots per speaker, two-shot', lighting: 'Warm podcast studio lighting', pacing: 'One exchange per clip', audio: 'Clear, well-recorded dialogue with room tone; voice style as chosen for the story', character_rules: 'Each baby with distinct hair and onesie colour', hook: 'Baby starts a dramatic statement mid-sentence', avoid: 'uncanny morphing, text, logos' } },
   { name: 'Travel & city cinematic', emoji: '🌆', audience: 'All', desc: 'Dreamy travel montages of beautiful places.',
     m: { style: 'Cinematic travel film, drone-like smoothness', look: 'Iconic but generic landscapes, golden-hour cities', camera: 'Drone flyovers, gimbal walks', lighting: 'Golden hour and blue hour', pacing: 'One place or moment per clip', audio: 'Chill music, ambient city/nature', character_rules: 'One traveller with a fixed backpack and outfit', hook: 'Breathtaking reveal shot', avoid: 'readable signs, logos, distorted crowds' } }
 ];
@@ -39,7 +39,7 @@ export function builtinCards() {
   return BUILTIN.map(b => ({
     id: 'b_' + hashStr(b.name), name: b.name, description: b.desc, platforms: ['General'], strength: 'Evergreen',
     audience: b.audience, language: 'Any', why: 'Evergreen format that performs consistently.', examples: [], visualStyle: b.m.style,
-    images: [], sources: [], master: clone(b.m), origin: 'builtin', emoji: b.emoji
+    images: [], sources: [], master: clone(b.m), origin: 'builtin', emoji: b.emoji, voiceChoice: !!b.voiceChoice
   }));
 }
 

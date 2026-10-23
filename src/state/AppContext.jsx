@@ -26,6 +26,13 @@ function useHashRoute() {
 }
 
 const monthKey = () => new Date().toISOString().slice(0, 7);
+/** Short, readable line from a Gemini thought summary (usually starts with a **bold heading**). */
+function summarizeThought(t) {
+  const s = String(t || '');
+  const h = s.match(/\*\*(.+?)\*\*/);
+  const line = (h ? h[1] : s.replace(/\s+/g, ' ')).trim();
+  return line.length > 110 ? line.slice(0, 107) + '…' : line;
+}
 const BATCH = 6;
 
 /** Turns saved data (any version) into app state. */
@@ -132,9 +139,16 @@ export function AppProvider({ session, children }) {
   const run = useCallback(async (msg, fn) => {
     const ac = new AbortController(); abortRef.current = ac;
     const ctl = {
-      signal: ac.signal, cur: msg,
+      signal: ac.signal, cur: msg, detail: null, last: 0,
       setMsg(m) { ctl.cur = m; setBusy(b => (b ? { ...b, msg: m } : b)); },
-      note(m) { setBusy(b => (b ? { ...b, msg: m } : b)); }
+      note(m) { setBusy(b => (b ? { ...b, msg: m } : b)); },
+      progress(p) {
+        if (p.phase === 'start') ctl.detail = { model: p.model, phase: 'waiting' };
+        else if (p.phase === 'thinking') ctl.detail = { ...ctl.detail, phase: 'thinking', thought: summarizeThought(p.thought) || ctl.detail?.thought };
+        else if (p.phase === 'writing') ctl.detail = { ...ctl.detail, phase: 'writing', chars: p.chars };
+        const now = Date.now();
+        if (p.phase === 'start' || now - ctl.last > 250) { ctl.last = now; const d = { ...ctl.detail }; setBusy(b => (b ? { ...b, detail: d } : b)); }
+      }
     };
     setBusy({ msg, t0: Date.now() });
     try { return await fn(ctl); }
@@ -146,10 +160,11 @@ export function AppProvider({ session, children }) {
   const cancelBusy = useCallback(() => abortRef.current?.abort(), []);
 
   /** AI call with automatic waiting/retrying when the provider is rate-limited. */
-  const ai = useCallback(async (user, ctl) => {
+  const ai = useCallback(async (user, ctl, opts = {}) => {
+    const llmOpts = { thinking: opts.thinking || 'medium', onProgress: p => ctl.progress?.(p) };
     for (let attempt = 0; ; attempt++) {
       try {
-        const r = await llmJSON(Sref.current, user, ctl.signal, n => toast(n));
+        const r = await llmJSON(Sref.current, user, ctl.signal, n => toast(n), llmOpts);
         if (attempt) ctl.note(ctl.cur);
         return r;
       } catch (e) {
@@ -175,7 +190,7 @@ export function AppProvider({ session, children }) {
 
   /* ---------- settings ---------- */
   const testAI = useCallback(async silent => {
-    const r = await run('Testing AI key…', async ctl => { const j = await ai('Return exactly this JSON: {"ok": true}', ctl); return !!j && j.ok === true; });
+    const r = await run('Testing AI key…', async ctl => { const j = await ai('Return exactly this JSON: {"ok": true}', ctl, { thinking: 'low' }); return !!j && j.ok === true; });
     updateS(s => { s.aiTested = true; s.aiOk = !!r; });
     if (!silent || !r) toast(r ? 'AI key works.' : 'AI key test failed — see the message above.', !r);
     return !!r;
@@ -312,7 +327,7 @@ export function AppProvider({ session, children }) {
         research = PR.researchNotes(settled);
       }
       ctl.setMsg(forced ? 'Outlining your chosen storyline…' : 'Developing 3 storylines and choosing the strongest…');
-      const o = PR.normOutline(await ai(PR.outlinePrompt(P0, S0, research, forced), ctl), P0, S0);
+      const o = PR.normOutline(await ai(PR.outlinePrompt(P0, S0, research, forced), ctl, { thinking: 'high' }), P0, S0);
       if (!o.characters.length || !o.locations.length) throw new Error('The AI returned an incomplete outline. Please try again.');
       ctl.setMsg(`Writing the full story — ${o.clip_count} parts, one per clip…`);
       const parts = PR.normParts(await ai(PR.partsPrompt(P0, S0, o), ctl), o);
@@ -374,7 +389,7 @@ export function AppProvider({ session, children }) {
     for (const [a, b] of PR.reviewWindows(n)) {
       ctl.setMsg(`Checking continuity: clips ${a + 1}–${b} of ${n}…`);
       try {
-        const j = await ai(PR.reviewPrompt(P1, S0, clips, a, b), ctl);
+        const j = await ai(PR.reviewPrompt(P1, S0, clips, a, b), ctl, { thinking: 'high' });
         fixes.push(...PR.applyFixes(clips, j, a, b));
         PR.linkAndValidate(clips, P1, S0);
       } catch (e) { if (e.name === 'AbortError') throw e; skipped = true; }

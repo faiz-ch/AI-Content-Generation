@@ -98,6 +98,14 @@ export function BusyOverlay() {
       <div className="busy-box">
         <div className="spinner" />
         <b>{busy.msg}</b>
+        {busy.detail && (
+          <div className="busy-detail">
+            {busy.detail.phase === 'thinking' && <span>Thinking{busy.detail.thought ? <>: <i>{busy.detail.thought}</i></> : '…'}</span>}
+            {busy.detail.phase === 'writing' && <span>Writing the answer… {busy.detail.chars.toLocaleString()} characters received</span>}
+            {busy.detail.phase === 'waiting' && <span>Waiting for the AI to start…</span>}
+            {busy.detail.model && <span className="tiny muted">Model: {busy.detail.model}</span>}
+          </div>
+        )}
         <div className="small muted" style={{ margin: '4px 0 14px' }}>{Math.round((Date.now() - busy.t0) / 1000)}s</div>
         <button className="btn sm" onClick={cancelBusy}>Cancel</button>
       </div>

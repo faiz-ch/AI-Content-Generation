@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowRight, Lightbulb, PenLine, Wand2, Plus, Trash2, Lock, LockOpen, Users, MapPin, Palette, ListOrdered, CircleCheck, Sparkles, ArrowLeft, Smartphone, MonitorPlay, Globe, Trophy, Clapperboard } from 'lucide-react';
 import { useApp } from '../state/AppContext.jsx';
-import { LENGTHS, clipRange, spokenLang, MASTER_FIELDS } from '../lib/prompts.js';
+import { LENGTHS, clipRange, spokenLang, MASTER_FIELDS, voiceNeedsAgeFix, voiceFor } from '../lib/prompts.js';
 import { fmtT, fmtDur, uid, str } from '../lib/utils.js';
 import { PageHead, Notice, Empty, useBind } from '../components/ui.jsx';
 
@@ -106,10 +106,15 @@ export default function Story() {
             <select id="s-sp" className="select" disabled={L} {...bind('story.settings.dialogue')}>
               <option value="narration">Narrator voice-over</option><option value="dialogue">Characters talk</option><option value="none">No speech (music/SFX)</option>
             </select></div>
+          {s.dialogue !== 'none' && <div className="field"><label htmlFor="s-voices">Character voices</label>
+            <select id="s-voices" className="select" disabled={L} {...bind('story.settings.voices')}>
+              <option value="natural">Match each character's real age</option><option value="comedy">Comedy: mismatched voices allowed</option>
+            </select></div>}
           <div className="field"><label htmlFor="s-lang">Spoken language</label>
             <select id="s-lang" className="select" disabled={L} {...bind('story.settings.language')}>{['English', 'Urdu', 'Hindi', 'Arabic', 'Other'].map(o => <option key={o}>{o}</option>)}</select></div>
           {s.language === 'Other' && <div className="field"><label htmlFor="s-lo">Which language?</label><input id="s-lo" className="input" disabled={L} {...bind('story.settings.languageOther')} /></div>}
         </div>
+        {P.genre.voiceChoice && s.dialogue !== 'none' && <div style={{ marginTop: 12 }}><Notice kind="info">This trend often gives babies deep adult voices as a joke. Choose <b>“Match each character's real age”</b> for real baby voices, or <b>“Comedy”</b> for the adult-voice style.</Notice></div>}
         {s.language !== 'English' && s.dialogue !== 'none' && <div style={{ marginTop: 12 }}><Notice>Prompts are written in English (best results). Spoken lines will be in {spokenLang(P)}. AI video voices are usually strongest in English — test one clip first.</Notice></div>}
 
         <div className="field" style={{ marginTop: 18 }}><label htmlFor="idea">Your idea</label>
@@ -214,11 +219,14 @@ export default function Story() {
                   <div className="field"><label>Appearance</label><textarea className="textarea" disabled={L} {...bind(`story.data.characters.${i}.appearance`)} /></div>
                   <div className="field"><label>Wardrobe</label><textarea className="textarea" disabled={L} {...bind(`story.data.characters.${i}.wardrobe`)} /></div>
                   <div className="field"><label>Role</label><input className="input" disabled={L} {...bind(`story.data.characters.${i}.role`)} /></div>
-                  <div className="field"><label>Voice</label><input className="input" disabled={L} {...bind(`story.data.characters.${i}.voice`)} /></div>
+                  <div className="field"><label>Age</label><input className="input" disabled={L} placeholder="e.g. 2-year-old toddler" {...bind(`story.data.characters.${i}.age`)} /></div>
                 </div>
+                <div className="field" style={{ marginTop: 10 }}><label>Voice (must fit the age)</label>
+                  <input className="input" disabled={L} placeholder="e.g. high-pitched, soft toddler voice, simple words" {...bind(`story.data.characters.${i}.voice`)} /></div>
+                {s.dialogue !== 'none' && voiceNeedsAgeFix(P, c) && <div style={{ marginTop: 8 }}><Notice>This voice does not sound like a child. In the prompts it will be written as: <b>{voiceFor(P, c)}</b>. Edit the voice above to change it.</Notice></div>}
               </div>
             ))}
-            {!L && <button className="btn sm" style={{ marginTop: 12 }} onClick={() => updateP(d => { const cs = d.story.data.characters; let id = 'c' + (cs.length + 1); while (cs.some(c => c.id === id)) id += 'x'; cs.push({ id, name: 'New character', role: '', appearance: '', wardrobe: '', voice: '' }); })}><Plus size={14} /> Add character</button>}
+            {!L && <button className="btn sm" style={{ marginTop: 12 }} onClick={() => updateP(d => { const cs = d.story.data.characters; let id = 'c' + (cs.length + 1); while (cs.some(c => c.id === id)) id += 'x'; cs.push({ id, name: 'New character', role: '', age: '', appearance: '', wardrobe: '', voice: '' }); })}><Plus size={14} /> Add character</button>}
           </>}
 
           {tab === 'locs' && <>
@@ -241,6 +249,7 @@ export default function Story() {
 
           {tab === 'style' && (
             <div className="kv">
+              {s.dialogue === 'narration' && <div className="field"><label>Narrator voice</label><input className="input" disabled={L} placeholder="e.g. warm, calm adult female storyteller, slow pace" {...bind('story.data.narrator_voice')} /></div>}
               {[['art_style', 'Art style'], ['film_look', 'Film look'], ['lighting', 'Lighting'], ['color_palette', 'Colour palette'], ['camera_language', 'Camera language']].map(([k, l]) => (
                 <div className="field" key={k}><label>{l}</label><input className="input" disabled={L} {...bind(`story.data.style_lock.${k}`)} /></div>
               ))}

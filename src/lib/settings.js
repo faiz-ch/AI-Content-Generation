@@ -39,7 +39,7 @@ export function newProject() {
   return {
     id: uid(), name: 'Untitled story', created: Date.now(), updated: Date.now(), genre: null,
     story: {
-      settings: { length: 'short', aspect: '9:16', dialogue: 'narration', language: 'English', languageOther: '', research: true },
+      settings: { length: 'short', aspect: '9:16', dialogue: 'narration', voices: 'natural', language: 'English', languageOther: '', research: true },
       idea: '', ideas: [], data: null, master: null, locked: false
     },
     clips: [], done: {}, review: null
