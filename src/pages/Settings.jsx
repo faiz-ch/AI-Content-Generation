@@ -121,7 +121,7 @@ export default function Settings() {
           <div className="field"><label htmlFor="model">Model</label>
             <input id="model" className="input" list="modelList" value={S.models[p]} placeholder={p === 'compat' ? 'Model name from your provider' : ''} onChange={e => { const v = e.target.value; set(s => { s.models[p] = v; }, true); }} />
             <datalist id="modelList">{pr.models.map(m => <option key={m} value={m} />)}</datalist>
-            <span className="hint">{p === 'compat' ? 'Copy the exact model name from your provider’s dashboard.' : 'Pre-selected automatically. Change only if you know the exact model name.'}{p === 'gemini' ? ' If it is unavailable, the next Gemini model is tried automatically.' : ''}</span>
+            <span className="hint">{p === 'compat' ? 'Copy the exact model name from your provider’s dashboard.' : 'Pre-selected automatically. Change only if you know the exact model name.'}{p === 'gemini' ? ' The app always uses exactly this model. Speed: 3.5 Flash-Lite (fastest) → 3.6 Flash → 3.8 Flash (best quality, slowest).' : ''}</span>
           </div>
           <div className="row"><button className="btn" onClick={() => testAI()}>Test AI key</button><Status ok={S.aiOk ? true : S.aiTested ? false : null} idle="Not tested" /></div>
         </Section>

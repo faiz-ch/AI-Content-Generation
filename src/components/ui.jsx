@@ -102,7 +102,7 @@ export function BusyOverlay() {
           <div className="busy-detail">
             {busy.detail.phase === 'thinking' && <span>Thinking{busy.detail.thought ? <>: <i>{busy.detail.thought}</i></> : '…'}</span>}
             {busy.detail.phase === 'writing' && <span>Writing the answer… {busy.detail.chars.toLocaleString()} characters received</span>}
-            {busy.detail.phase === 'waiting' && <span>Waiting for the AI to start…</span>}
+            {busy.detail.phase === 'waiting' && <span>{Date.now() - busy.t0 > 15000 ? 'The AI is working on this step — large steps can take 1–2 minutes.' : 'Request sent — waiting for the AI…'}</span>}
             {busy.detail.model && <span className="tiny muted">Model: {busy.detail.model}</span>}
           </div>
         )}

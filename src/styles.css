@@ -417,3 +417,6 @@ details.disclose > :last-child { margin-bottom: 14px; }
 .panel.plan { background: var(--grad-hero); }
 .busy-detail { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; font-size: 0.86rem; color: var(--muted); min-height: 40px; }
 .busy-detail i { color: var(--ink); font-style: normal; }
+.model-notice { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; margin-bottom: 16px; border-radius: 12px; background: var(--warn-soft); font-size: 0.9rem; }
+.model-notice > svg { color: var(--warn); flex: none; margin-top: 2px; }
+.model-notice > span { flex: 1; }

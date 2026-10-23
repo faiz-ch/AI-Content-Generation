@@ -62,7 +62,7 @@ async function toError(res, label) {
   let msg = data && (data.error?.message || data.detail?.error || data.detail || data.error || data.message);
   if (msg && typeof msg !== 'string') msg = JSON.stringify(msg);
   if (!msg) msg = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 200) || res.statusText;
-  const hint = { 401: ' (check the key)', 403: ' (check the key or its permissions)', 429: ' (rate limit or quota reached — wait and retry)',
+  const hint = { 401: ' (check the key)', 403: ' (check the key or its permissions)', 404: ' (model or address not found — check the model name in Settings)', 429: ' — rate limit reached. Wait a minute (or until your daily quota resets) and try again',
     432: ' (Tavily monthly credits used up)', 502: ' (the connection to the provider failed)', 504: ' (the provider took too long)' }[res.status] || '';
   const err = new Error(`${label} error ${res.status}${hint}: ${msg}`);
   err.status = res.status;
@@ -157,27 +157,18 @@ export async function llmRaw(S, system, user, signal, onNote, opts = {}) {
   const { thinking = 'medium', onProgress } = opts;
   if (!key) throw new Error('No AI key set. Open Settings.');
   if (p === 'gemini') {
-    const chain = [model || PROVIDERS.gemini.models[0], ...PROVIDERS.gemini.models.filter(m => m !== model)];
-    let lastErr;
-    for (const m of chain) {
-      try {
-        onProgress?.({ phase: 'start', model: m });
-        let r;
-        try { r = await geminiCall(S, m, key, system, user, signal, thinking, onProgress); }
-        catch (e) {
-          // Models that do not accept a thinking level (e.g. older ones) — retry with their defaults.
-          if (e.status === 400 && /thinking/i.test(e.message)) r = await geminiCall(S, m, key, system, user, signal, null, onProgress);
-          else throw e;
-        }
-        if (!r.text) { const e = new Error('Gemini returned no text (' + (r.finish || r.block || 'empty reply') + ')'); e.status = 0; throw e; }
-        if (m !== model && onNote) onNote(`Model ${model} was unavailable — used ${m} instead.`);
-        return r.text;
-      } catch (e) {
-        lastErr = e;
-        if (e.name === 'AbortError' || ![404, 429, 500, 503].includes(e.status)) throw e;
-      }
+    // Always the model chosen in Settings — never switched automatically.
+    const m = model || PROVIDERS.gemini.models[0];
+    onProgress?.({ phase: 'start', model: m });
+    let r;
+    try { r = await geminiCall(S, m, key, system, user, signal, thinking, onProgress); }
+    catch (e) {
+      // Same model, retried without the thinking setting if this model does not accept it.
+      if (e.status === 400 && /thinking/i.test(e.message)) r = await geminiCall(S, m, key, system, user, signal, null, onProgress);
+      else throw e;
     }
-    throw lastErr;
+    if (!r.text) { const e = new Error(`Gemini (${m}) returned no text (${r.finish || r.block || 'empty reply'}).`); e.status = 0; throw e; }
+    return r.text;
   }
   onProgress?.({ phase: 'start', model });
   if (p === 'claude') {

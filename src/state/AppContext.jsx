@@ -84,7 +84,7 @@ export function AppProvider({ session, children }) {
   const toast = useCallback((msg, isErr) => {
     setToastState({ msg, isErr, id: uid() });
     clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToastState(null), isErr ? 9000 : 3800);
+    toastTimer.current = setTimeout(() => setToastState(null), isErr ? (/\b429\b/.test(msg) ? 20000 : 10000) : 3800);
   }, []);
 
   /* ---------- saving (encrypted by the session) ---------- */
@@ -160,23 +160,24 @@ export function AppProvider({ session, children }) {
   const cancelBusy = useCallback(() => abortRef.current?.abort(), []);
 
   /** AI call with automatic waiting/retrying when the provider is rate-limited. */
+  const onNote = useCallback(n => { if (n) toast(String(n)); }, [toast]);
   const ai = useCallback(async (user, ctl, opts = {}) => {
     const llmOpts = { thinking: opts.thinking || 'medium', onProgress: p => ctl.progress?.(p) };
     for (let attempt = 0; ; attempt++) {
       try {
-        const r = await llmJSON(Sref.current, user, ctl.signal, n => toast(n), llmOpts);
+        const r = await llmJSON(Sref.current, user, ctl.signal, onNote, llmOpts);
         if (attempt) ctl.note(ctl.cur);
         return r;
       } catch (e) {
-        if (e.name === 'AbortError' || ![429, 500, 503].includes(e.status) || attempt >= 2) throw e;
-        for (let s = attempt ? 40 : 20; s > 0; s--) {
+        if (e.name === 'AbortError' || ![500, 503].includes(e.status) || attempt >= 2) throw e;
+        for (let s = [15, 30][attempt]; s > 0; s--) {
           if (ctl.signal.aborted) throw new DOMException('Aborted', 'AbortError');
-          ctl.note(`The AI service is busy or rate-limited — retrying in ${s}s…`);
+          ctl.note(`Google’s server is busy (error ${e.status}) — retrying the same model in ${s}s…`);
           await sleep(1000);
         }
       }
     }
-  }, [toast]);
+  }, [onNote]);
   const tv = useCallback(async (q, signal, extra) => {
     const d = await tavily(Sref.current, q, signal, extra);
     const n = Number(d?.usage?.credits) || 1, k = monthKey();

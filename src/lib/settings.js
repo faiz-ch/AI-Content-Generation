@@ -2,7 +2,7 @@ import { uid } from './utils.js';
 
 export const PROVIDERS = {
   gemini: { label: 'Google Gemini', badge: 'Free tier', free: true, keyUrl: 'https://aistudio.google.com/apikey',
-    models: ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-flash-latest'],
+    models: ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite'],
     note: 'Recommended. Free key from Google AI Studio.' },
   claude: { label: 'Anthropic Claude', badge: 'Paid', keyUrl: 'https://console.anthropic.com/settings/keys',
     models: ['claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-opus-5-5'], note: 'Strong story writing. Pay per use.' },
