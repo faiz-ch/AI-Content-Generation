@@ -3,15 +3,16 @@ import { Eye, EyeOff, Info, TriangleAlert, CircleCheck, X, Flame } from 'lucide-
 import { useApp } from '../state/AppContext.jsx';
 import { getPath, hashStr } from '../lib/utils.js';
 
-/** Binds an input to a path inside the current project. */
-export function useBind() {
-  const { P, updateP } = useApp();
+/** Binds an input to a path in the current story ("P", default) or in discovery ("D"). */
+export function useBind(target = 'P') {
+  const { P, D, updateP, updateD } = useApp();
+  const src = target === 'D' ? D : P, upd = target === 'D' ? updateD : updateP;
   return (path, { num = false } = {}) => ({
-    value: getPath(P, path) ?? '',
+    value: getPath(src, path) ?? '',
     onChange: e => {
       const v = e.target.type === 'checkbox' ? e.target.checked : num ? Number(e.target.value) : e.target.value;
-      updateP(p => {
-        const ks = path.split('.'); let cur = p;
+      upd(o => {
+        const ks = path.split('.'); let cur = o;
         for (let i = 0; i < ks.length - 1; i++) cur = cur[ks[i]];
         cur[ks[ks.length - 1]] = v;
       });
@@ -43,12 +44,12 @@ export function Empty({ icon: Icon, title, children }) {
   );
 }
 
-export function SecretInput({ value, onChange, placeholder, id }) {
+export function SecretInput({ value, onChange, placeholder, id, autoFocus }) {
   const [show, setShow] = useState(false);
   return (
     <div className="input-wrap">
       <input id={id} className="input" type={show ? 'text' : 'password'} autoComplete="off" spellCheck={false}
-        value={value} onChange={onChange} placeholder={placeholder} />
+        value={value} onChange={onChange} placeholder={placeholder} autoFocus={autoFocus} />
       <button type="button" className="eye" onClick={() => setShow(s => !s)} aria-label={show ? 'Hide key' : 'Show key'}>
         {show ? <EyeOff size={17} /> : <Eye size={17} />}
       </button>

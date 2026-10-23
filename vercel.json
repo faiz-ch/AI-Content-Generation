@@ -1,11 +1,32 @@
 {
   "rewrites": [
-    { "source": "/relay/generativelanguage.googleapis.com/:path*", "destination": "https://generativelanguage.googleapis.com/:path*" },
-    { "source": "/relay/api.tavily.com/:path*", "destination": "https://api.tavily.com/:path*" },
-    { "source": "/relay/api.anthropic.com/:path*", "destination": "https://api.anthropic.com/:path*" },
-    { "source": "/relay/api.openai.com/:path*", "destination": "https://api.openai.com/:path*" },
-    { "source": "/relay/api.deepseek.com/:path*", "destination": "https://api.deepseek.com/:path*" },
-    { "source": "/relay/api.groq.com/:path*", "destination": "https://api.groq.com/:path*" },
-    { "source": "/relay/openrouter.ai/:path*", "destination": "https://openrouter.ai/:path*" }
+    {
+      "source": "/relay/generativelanguage.googleapis.com/:path*",
+      "destination": "https://generativelanguage.googleapis.com/:path*"
+    },
+    {
+      "source": "/relay/api.tavily.com/:path*",
+      "destination": "https://api.tavily.com/:path*"
+    },
+    {
+      "source": "/relay/api.anthropic.com/:path*",
+      "destination": "https://api.anthropic.com/:path*"
+    },
+    {
+      "source": "/relay/api.openai.com/:path*",
+      "destination": "https://api.openai.com/:path*"
+    },
+    {
+      "source": "/relay/api.deepseek.com/:path*",
+      "destination": "https://api.deepseek.com/:path*"
+    },
+    {
+      "source": "/relay/api.groq.com/:path*",
+      "destination": "https://api.groq.com/:path*"
+    },
+    {
+      "source": "/relay/openrouter.ai/:path*",
+      "destination": "https://openrouter.ai/:path*"
+    }
   ]
 }

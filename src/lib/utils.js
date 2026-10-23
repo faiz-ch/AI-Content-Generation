@@ -8,6 +8,8 @@ export const hashStr = s => { let h = 0; for (let i = 0; i < s.length; i++) h = 
 export const wordCount = s => str(s).split(/\s+/).filter(Boolean).length;
 export const endDot = s => { s = str(s); return s && !/[.!?…。]$/.test(s) ? s + '.' : s; };
 export const fmtT = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+export const fmtDur = s => (s >= 60 ? `${Math.floor(s / 60)} min${s % 60 ? ` ${s % 60} s` : ''}` : `${s} s`);
+export const sleep = ms => new Promise(r => setTimeout(r, ms));
 export const safeName = s => str(s).replace(/[^\w-]+/g, '_').slice(0, 60) || 'project';
 export const timeAgo = ts => {
   const m = Math.round((Date.now() - ts) / 60000);

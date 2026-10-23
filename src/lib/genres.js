@@ -43,7 +43,9 @@ export function builtinCards() {
   }));
 }
 
-export function customCard(name, id) {
-  return { id: id || 'u_' + hashStr(String(name).trim().toLowerCase()), name: String(name).trim(), description: 'Your own genre.', platforms: ['General'],
-    strength: 'Custom', audience: 'All', language: 'Any', why: '', examples: [], visualStyle: '', images: [], sources: [], master: null, origin: 'custom' };
+export function customCard(name, description) {
+  const n = String(name).trim();
+  return { id: 'u_' + hashStr(n.toLowerCase() + '|' + String(description || '').trim().toLowerCase()), name: n,
+    description: String(description || '').trim() || 'Your own genre.', platforms: ['General'], strength: 'Custom', audience: 'All',
+    language: 'Any', why: '', examples: [], visualStyle: '', images: [], sources: [], master: null, origin: 'custom' };
 }

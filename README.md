@@ -74,15 +74,13 @@ so the app connects directly from the browser.
 
 | Area | What it does |
 |---|---|
-| Home | Hero, feature shortcuts, Quick Start progress for the current story, recent stories |
-| Trending Genres | Tavily search across TikTok, YouTube Shorts, Instagram Reels, Facebook Reels; "All trends" or "My own genre"; filters before and after search; duplicate trends merged; 24 h cache; "Find more"; 16 built-in genres |
-| Genre | Details, sources, editable master prompt (style, camera, lighting, pacing, audio, character rules, hook, avoid) |
-| Story | Length, aspect ratio, speech, language; idea suggestions; AI story with characters, locations, style lock and one part per clip; edit, insert, delete or AI-rewrite any part; rewrite the whole story; finalize |
-| Clip Prompts | One self-contained prompt per clip; locked character/outfit/location text inserted word-for-word; each clip opens on the previous clip's ending frame; dialogue-length warning; copy, edit, undo, regenerate one clip, mark done; export .txt / .json; consistency kit with character reference prompts |
-| My Stories | All projects saved in the browser; open, rename, export, import, delete |
-| Settings | AI provider (Gemini, Claude, OpenAI, OpenAI-compatible), model, Tavily, connection mode, clip length, name/avatar, theme, key storage |
-
-Header search filters the loaded genres and can start a live search for what you typed.
+| Private profiles | Each person creates a profile with a passcode. Stories, settings and API keys are encrypted (AES-256-GCM, key from the passcode via PBKDF2) and only visible after unlocking. Lock button, auto-lock when idle, change passcode, delete profile. A new browser tab always starts locked. A forgotten passcode cannot be recovered — export backups. |
+| Trending Genres | "All trends", or **Describe what I want**: write the kind of content you want in your own words; the AI interprets it, plans the web searches, and shows how it understood you. Filters before and after search, duplicates merged, 24 h cache, "Find more", 16 built-in genres, or use your description directly as the genre. |
+| Genre | Details, sources, editable genre master prompt. |
+| Story | Choose **Short** (Reels/TikTok/Shorts) or **Long** (YouTube, several minutes). The AI researches similar stories (optional), develops 3 storylines, picks the strongest hook/suspense/ending, **decides how many clips the story needs**, and writes it start to finish. Edit, insert, delete or AI-rewrite parts; set each part's transition, location, time of day and weather; switch to another storyline; rewrite the whole story. |
+| Finalize | The characters, locations, style and a **story-specific master prompt** are rebuilt from the final story, then every clip is planned. |
+| Clip Prompts | Each clip has a START frame, timed ACTION beats and an END frame. "Continues" clips start exactly on the previous END frame (copied by code); "New scene" clips change place or time. Automatic checks plus an AI continuity review fix contradictions. Long stories are planned in batches and can be continued if interrupted. Copy, edit, undo, regenerate one clip, mark done, export .txt/.json. |
+| My Stories | Open, rename, export, import, delete. |
 
 ## Default models (verified 13 Oct 2026)
 
@@ -120,4 +118,6 @@ src/
 | "error 429" | Rate limit or free quota reached. Wait and retry. |
 | "Tavily error 432" | Tavily monthly credits used up. |
 
-Projects and keys live in the browser's storage. Use **My Stories → Export** for backups.
+Stories and keys are stored encrypted in the browser, per profile. Use **My Stories → Export** for backups.
+
+Private profiles need a secure address (https, or http://localhost). If the Docker app is opened by its network IP over plain http, the app offers an unprotected mode instead.

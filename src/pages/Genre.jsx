@@ -5,7 +5,7 @@ import { copyText } from '../lib/utils.js';
 import { PageHead, Empty, Thumb, StrengthBadge, Notice, useBind } from '../components/ui.jsx';
 
 export default function Genre() {
-  const { P, nav, genMaster, toast, requireAI } = useApp();
+  const { P, nav, genMaster, regenMaster, toast, requireAI } = useApp();
   const bind = useBind();
   const g = P.genre;
   if (!g) {
@@ -16,12 +16,6 @@ export default function Genre() {
     );
   }
   const locked = P.story.locked;
-  const regen = async () => {
-    if (locked) { toast('Unlock the story first to change the master prompt.'); return; }
-    if (g.master && !window.confirm('Replace the current master prompt with a new one?')) return;
-    if (!requireAI()) return;
-    await genMaster(g);
-  };
 
   return (
     <div className="stack">
@@ -56,10 +50,10 @@ export default function Genre() {
       <section className="panel">
         <div className="section-title">
           <div><h2><Wand2 size={18} style={{ verticalAlign: -3, color: 'var(--accent)' }} /> Master prompt</h2>
-            <p className="small muted" style={{ marginTop: 4 }}>The style guide applied to every clip. Edit any field — changes save automatically.</p></div>
+            <p className="small muted" style={{ marginTop: 4 }}>The genre’s style guide. When you finalize your story, a story-specific version is built from it and from your final story.</p></div>
           <div className="row">
             <button className="btn sm" disabled={!g.master} onClick={async () => toast((await copyText(masterText(g.master))) ? 'Copied' : 'Copy failed', false)}><Copy size={14} /> Copy</button>
-            <button className="btn sm" onClick={regen} disabled={locked}><RefreshCw size={14} /> Regenerate</button>
+            <button className="btn sm" onClick={regenMaster} disabled={locked}><RefreshCw size={14} /> Regenerate</button>
           </div>
         </div>
         {locked && <Notice kind="info"><Lock size={14} style={{ verticalAlign: -2 }} /> Locked because the story is finalized. Unlock the story to edit.</Notice>}

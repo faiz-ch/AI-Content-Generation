@@ -1,4 +1,6 @@
 import { AppProvider, useApp } from './state/AppContext.jsx';
+import { DialogProvider } from './state/Dialogs.jsx';
+import Gate from './components/Gate.jsx';
 import Shell from './components/Shell.jsx';
 import { BusyOverlay, Toast } from './components/ui.jsx';
 import Home from './pages/Home.jsx';
@@ -24,5 +26,15 @@ function Router() {
 }
 
 export default function App() {
-  return <AppProvider><Router /></AppProvider>;
+  return (
+    <DialogProvider>
+      <Gate>
+        {session => (
+          <AppProvider key={session.profile.id} session={session}>
+            <Router />
+          </AppProvider>
+        )}
+      </Gate>
+    </DialogProvider>
+  );
 }

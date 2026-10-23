@@ -2,7 +2,6 @@
  * Network layer: routes every provider call directly, through the built-in
  * same-origin relay (Docker/nginx or Vite dev), or through a custom proxy.
  */
-import { LS } from './storage.js';
 import { str } from './utils.js';
 import { PROVIDERS } from './settings.js';
 
@@ -76,8 +75,8 @@ export async function llmRaw(S, system, user, signal, onNote) {
     let lastErr;
     for (const m of chain) {
       try {
-        const d = await http(S, `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent?key=${encodeURIComponent(key)}`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, signal,
+        const d = await http(S, `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key }, signal,
           body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: 'user', parts: [{ text: user }] }],
             generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 32768 } })
         }, 'Gemini');
@@ -137,13 +136,9 @@ export async function llmJSON(S, user, signal, onNote) {
 }
 
 /* ---------------- Tavily ---------------- */
-export const creditsKey = () => 'fss_credits_' + new Date().toISOString().slice(0, 7);
-export const creditsUsed = () => LS.get(creditsKey(), 0) || 0;
 export async function tavily(S, query, signal, extra = {}) {
-  const d = await http(S, 'https://api.tavily.com/search', {
+  return http(S, 'https://api.tavily.com/search', {
     method: 'POST', signal, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + str(S.tavilyKey) },
     body: JSON.stringify({ query, search_depth: 'basic', max_results: 8, include_images: true, include_image_descriptions: true, include_usage: true, ...extra })
   }, 'Tavily');
-  LS.set(creditsKey(), creditsUsed() + (Number(d?.usage?.credits) || 1));
-  return d;
 }
