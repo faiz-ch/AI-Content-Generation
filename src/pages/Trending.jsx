@@ -71,7 +71,7 @@ export default function Trending() {
           <div className="field"><label htmlFor="f-rec"><Clock size={14} style={{ verticalAlign: -2 }} /> Trending within</label>
             <select id="f-rec" className="select" {...bind('pre.recency')}>{[['week', 'Last week'], ['month', 'Last month'], ['year', 'Last year']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
         </div>
-        <div className="row" style={{ marginTop: 18 }}>
+        <div className="row btn-grid" style={{ marginTop: 18 }}>
           <button className="btn primary" onClick={() => runDiscover()} disabled={!hasTavily}><Search size={17} /> {describe ? 'Find trends for my description' : 'Search trending content'}</button>
           <button className="btn" onClick={showBuiltin}><Library size={17} /> Built-in genres</button>
           {describe && str(D.description) && <button className="btn soft" onClick={genreFromDescription}>Use my description as the genre <ArrowRight size={16} /></button>}

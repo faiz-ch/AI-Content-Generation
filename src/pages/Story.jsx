@@ -126,7 +126,7 @@ export default function Story() {
           </label>
         )}
         {!L && (
-          <div className="row" style={{ marginTop: 12 }}>
+          <div className="row btn-grid" style={{ marginTop: 12 }}>
             <button className="btn" onClick={suggestIdeas}><Lightbulb size={16} /> Suggest ideas</button>
             <button className="btn primary" onClick={writeStory}><PenLine size={16} /> {st ? 'Write a new story' : 'Write story'}</button>
           </div>
@@ -184,7 +184,7 @@ export default function Story() {
               <div className="part-meta">
                 <div className="field"><label>Transition</label>
                   <select className="select" disabled={L || i === 0} {...bind(`story.data.parts.${i}.transition`)}>
-                    <option value="continuous">Continues previous</option><option value="cut">New scene</option>
+                    <option value="continuous">Continues</option><option value="cut">New scene</option>
                   </select></div>
                 <div className="field"><label>Location</label>
                   <select className="select" disabled={L} {...bind(`story.data.parts.${i}.location`)}>

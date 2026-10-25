@@ -83,7 +83,7 @@ export default function Prompts() {
             </details>
           )}
         </div>
-        <div className="row" style={{ marginTop: 14 }}>
+        <div className="row btn-grid" style={{ marginTop: 14 }}>
           <button className="btn" onClick={() => copy(allPromptsText(P, S))}><Copy size={16} /> Copy all</button>
           <button className="btn" onClick={() => download(safeName(st.title) + '_prompts.txt', allPromptsText(P, S))}><Download size={16} /> Download .txt</button>
           <button className="btn" onClick={() => download(safeName(P.name) + '.json', JSON.stringify(P, null, 2), 'application/json')}><FileJson size={16} /> Story .json</button>
